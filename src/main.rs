@@ -1,11 +1,11 @@
-use map::Map;
+use generation::Map;
 use render::render2d;
 
-mod map;
+mod generation;
 mod render;
 
 fn main() {
     let map = Map::new(5);
-    println!("{:?}", map.land_map);
+
     render2d(map);
 }
