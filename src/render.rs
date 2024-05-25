@@ -8,13 +8,16 @@ struct RectangleProperties {
     x_center: f32,
     y_center: f32,
     rect_color: Srgba,
+    index: usize,
 }
+
+fn assign_color(){}
 
 // function to create a 2D top view of the terrain
 // taken from https://github.com/asny/three-d/blob/master/examples/shapes2d/src/main.rs
 pub fn render2d(map: Map) {
 
-    let window_size: u32 = 800;
+    let window_size: u32 = 1000;
 
     // create window and context
     let window = Window::new(WindowSettings {
@@ -46,11 +49,13 @@ pub fn render2d(map: Map) {
             // Determine center of the rectangle based on index in the land_map vector
             let x_center: f32 = (j as f32 + 0.5) * rect_size;
             let y_center: f32 = (i as f32 + 0.5) * rect_size;
+            let index = i*j;
 
             RectangleProperties {
                 x_center,
                 y_center,
                 rect_color,
+                index,
             }
         })
     }).collect();
@@ -62,16 +67,17 @@ pub fn render2d(map: Map) {
             Gm::new(
                 Rectangle::new(
                     &context,
-                    vec2(props.x_center, props.y_center) * scale_factor,
+                    vec2(props.x_center, props.y_center),
                     degrees(0.0),
-                    rect_size * scale_factor,
-                    rect_size * scale_factor,
+                    rect_size,
+                    rect_size,
                 ),
                 ColorMaterial {
                     color: props.rect_color,
                     ..Default::default()
                 },
             )
+            
         }).collect();
 
     window.render_loop(move |frame_input| {
