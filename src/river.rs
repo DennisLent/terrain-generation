@@ -1,14 +1,9 @@
-use std::collections::BinaryHeap;
 use std::collections::HashSet;
 use std::collections::VecDeque;
 use rayon::prelude::*;
 use rand::prelude::SliceRandom;
 
 /// struct to hold information about a river
-struct River{
-    start_point: (usize, usize),
-    end_point: (usize, usize)
-}
 
 /// function to find proper starting points for rivers
 /// a river should start in a high elevation height > 150
