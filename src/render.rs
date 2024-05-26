@@ -23,9 +23,9 @@ struct RectangleProperties {
 }
 
 /// function to assign colors based on the type of terrain
-fn assign_color(terrain_type: i32, temperature: f32, rainfall: f32) -> Srgba{
+fn assign_color(terrain_type: i32, height: f32, temperature: f32, rainfall: f32) -> Srgba{
     // water for now just keep it blue
-    if terrain_type == 0{
+    if terrain_type == 0 || height <= 65.0{
         Srgba::BLUE
     }
     // land tile so need to check temperature and rainfall
@@ -89,12 +89,14 @@ pub fn render2d(map: Map) {
     // This is done in parallel with rayon to reduce computation time
     let rain = &map.rainfall_map;
     let temp = &map.temperature_map;
+    let height = &map.height_map;
     let rect_properties: Vec<RectangleProperties> = map.land_map.par_iter().enumerate().flat_map_iter(|(i, row)| {
         row.iter().enumerate().map(move |(j, &terrain)| {
             let temperature = temp[i][j];
             let rainfall = rain[i][j];
+            let elevation = height[i][j];
 
-            let rect_color = assign_color(terrain, temperature, rainfall);
+            let rect_color = assign_color(terrain, elevation, temperature, rainfall);
 
             // Determine center of the rectangle based on index in the land_map vector
             let x_center: f32 = (j as f32 + 0.5) * rect_size;
