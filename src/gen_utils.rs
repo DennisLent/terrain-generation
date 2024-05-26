@@ -3,6 +3,7 @@ use rayon::prelude::*;
 use std::sync::{Mutex, Arc};
 use crate::sines::NoiseGen;
 use crate::simplex::SimplexNoise;
+use rand::prelude::SliceRandom;
 
 /// function used to create the baseline land and ocean generation
 /// this is called in the beginning to outline land and ocean in general
@@ -42,48 +43,110 @@ pub fn generate_islands(size: usize) -> Vec<Vec<i32>> {
     return board;
 }
 
-/// function to "zoom" into the board for integers
+/// function to "zoom" into the board for integers and add imperfections
+/// this is only for landmasses to reduce the amount of straight edges the chance is 40%
 pub fn zoom_int(board: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
     let new_size = board.len() * 2;
     let mut new_board = vec![vec![0; new_size]; new_size];
     let new_board_mutex = Arc::new(Mutex::new(new_board));
-
     (0..board.len()).into_par_iter().for_each(|i| {
         (0..board.len()).into_par_iter().for_each(|j| {
-
-            
             let board_value = board[i][j];
             let new_i = i * 2;
             let new_j = j * 2;
+
             let mut new_board = new_board_mutex.lock().unwrap();
+
+            // Original value assignments
             new_board[new_i][new_j] = board_value;
             new_board[new_i][new_j + 1] = board_value;
             new_board[new_i + 1][new_j] = board_value;
             new_board[new_i + 1][new_j + 1] = board_value;
+
+            // Add imperfections
+            let mut rng = rand::thread_rng();
+            let mut add_variation = |ni: usize, nj: usize| {
+                if rng.gen::<f32>() < 0.4 { 
+                    let mut neighbors = vec![board_value];
+                    
+                    // Collect valid neighbors
+                    if ni > 0 {
+                        neighbors.push(new_board[(ni - 1) / 2][nj / 2]);
+                    }
+                    if nj > 0 {
+                        neighbors.push(new_board[ni / 2][(nj - 1) / 2]);
+                    }
+                    if ni / 2 + 1 < board.len() {
+                        neighbors.push(board[ni / 2 + 1][nj / 2]);
+                    }
+                    if nj / 2 + 1 < board.len() {
+                        neighbors.push(board[ni / 2][nj / 2 + 1]);
+                    }
+
+                    new_board[ni][nj] = *neighbors.choose(&mut rng).unwrap();
+                }
+            };
+
+            // Apply variation to each new cell
+            add_variation(new_i, new_j);
+            add_variation(new_i, new_j + 1);
+            add_variation(new_i + 1, new_j);
+            add_variation(new_i + 1, new_j + 1);
         });
     });
 
     Arc::try_unwrap(new_board_mutex).unwrap().into_inner().unwrap()
 }
 
-/// function to "zoom" into the board for integers
+/// function to "zoom" into the board for floats and add imperfections
+/// since float is for height, temp and rainfall this chance will be 25%
 pub fn zoom_float(board: Vec<Vec<f32>>) -> Vec<Vec<f32>> {
     let new_size = board.len() * 2;
-    let new_board = vec![vec![0.0; new_size]; new_size];
+    let mut new_board = vec![vec![0.0; new_size]; new_size];
     let new_board_mutex = Arc::new(Mutex::new(new_board));
-
     (0..board.len()).into_par_iter().for_each(|i| {
         (0..board.len()).into_par_iter().for_each(|j| {
-
-            
             let board_value = board[i][j];
             let new_i = i * 2;
             let new_j = j * 2;
+
             let mut new_board = new_board_mutex.lock().unwrap();
+
+            // Original value assignments
             new_board[new_i][new_j] = board_value;
             new_board[new_i][new_j + 1] = board_value;
             new_board[new_i + 1][new_j] = board_value;
             new_board[new_i + 1][new_j + 1] = board_value;
+
+            // Add imperfections
+            let mut rng = rand::thread_rng();
+            let mut add_variation = |ni: usize, nj: usize| {
+                if rng.gen::<f32>() < 0.25 {  // 25% chance to change the value
+                    let mut neighbors = vec![board_value];
+                    
+                    // Collect valid neighbors
+                    if ni > 0 {
+                        neighbors.push(new_board[(ni - 1) / 2][nj / 2]);
+                    }
+                    if nj > 0 {
+                        neighbors.push(new_board[ni / 2][(nj - 1) / 2]);
+                    }
+                    if ni / 2 + 1 < board.len() {
+                        neighbors.push(board[ni / 2 + 1][nj / 2]);
+                    }
+                    if nj / 2 + 1 < board.len() {
+                        neighbors.push(board[ni / 2][nj / 2 + 1]);
+                    }
+
+                    new_board[ni][nj] = *neighbors.choose(&mut rng).unwrap();
+                }
+            };
+
+            // Apply variation to each new cell
+            add_variation(new_i, new_j);
+            add_variation(new_i, new_j + 1);
+            add_variation(new_i + 1, new_j);
+            add_variation(new_i + 1, new_j + 1);
         });
     });
 
