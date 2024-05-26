@@ -3,18 +3,67 @@ use three_d::*;
 use rayon::prelude::*;
 use std::sync::Mutex;
 
-// struct to contain the main information about a rectangle to be drawn
+// colors for the different terrains
+// ChatGPT made this because I was lazy
+static SUBTROP_DESERT: Srgba = Srgba::new(237, 201, 175, 255);   // Light Sandy Brown
+static SAVANNAH: Srgba = Srgba::new(238, 220, 130, 255);         // Light Goldenrod Yellow
+static RAINFOREST: Srgba = Srgba::new(34, 139, 34, 255);         // Forest Green
+static TEMP_RAIN: Srgba = Srgba::new(0, 128, 0, 255);            // Green
+static FOREST: Srgba = Srgba::new(34, 139, 34, 255);             // Forest Green
+static WOOLAND: Srgba = Srgba::new(139, 69, 19, 255);            // Saddle Brown
+static GRASSLAND: Srgba = Srgba::new(124, 252, 0, 255);          // Lawn Green
+static TAIGA: Srgba = Srgba::new(0, 100, 0, 255);                // Dark Green
+static TUNDRA: Srgba = Srgba::new(176, 224, 230, 255);           // Powder Blue
+
+/// struct to contain the main information about a rectangle to be drawn
 struct RectangleProperties {
     x_center: f32,
     y_center: f32,
     rect_color: Srgba,
-    index: usize,
 }
 
-fn assign_color(){}
+/// function to assign colors based on the type of terrain
+fn assign_color(terrain_type: i32, temperature: f32, rainfall: f32) -> Srgba{
+    // water for now just keep it blue
+    if terrain_type == 0{
+        Srgba::BLUE
+    }
+    // land tile so need to check temperature and rainfall
+    else{
+        // Determine the biome based on temperature and rainfall
+        if temperature > 15.0 {
+            if rainfall < 100.0 {
+                SUBTROP_DESERT
+            } else if rainfall < 250.0 {
+                SAVANNAH
+            } else {
+                RAINFOREST
+            }
+        } else if temperature > 5.0 {
+            if rainfall < 50.0 {
+                GRASSLAND
+            } else if rainfall < 120.0 {
+                WOOLAND
+            } 
+            else if rainfall < 250.0 {
+                FOREST
+            }else {
+                TEMP_RAIN
+            }
+        } else if temperature > 0.0 {
+            if rainfall < 50.0 {
+                TUNDRA
+            } else {
+                TAIGA
+            }
+        } else {
+            TUNDRA
+        }
+    }
+}
 
-// function to create a 2D top view of the terrain
-// taken from https://github.com/asny/three-d/blob/master/examples/shapes2d/src/main.rs
+/// function to create a 2D top view of the terrain
+/// taken from https://github.com/asny/three-d/blob/master/examples/shapes2d/src/main.rs
 pub fn render2d(map: Map) {
 
     let window_size: u32 = 1000;
@@ -38,24 +87,23 @@ pub fn render2d(map: Map) {
 
     // Get all rectangle properties and store them in structs
     // This is done in parallel with rayon to reduce computation time
+    let rain = &map.rainfall_map;
+    let temp = &map.temperature_map;
     let rect_properties: Vec<RectangleProperties> = map.land_map.par_iter().enumerate().flat_map_iter(|(i, row)| {
-        row.iter().enumerate().map(move |(j, &value)| {
-            let rect_color = if value == 0 {
-                Srgba::BLUE
-            } else {
-                Srgba::GREEN
-            };
+        row.iter().enumerate().map(move |(j, &terrain)| {
+            let temperature = temp[i][j];
+            let rainfall = rain[i][j];
+
+            let rect_color = assign_color(terrain, temperature, rainfall);
 
             // Determine center of the rectangle based on index in the land_map vector
             let x_center: f32 = (j as f32 + 0.5) * rect_size;
             let y_center: f32 = (i as f32 + 0.5) * rect_size;
-            let index = i*j;
 
             RectangleProperties {
                 x_center,
                 y_center,
                 rect_color,
-                index,
             }
         })
     }).collect();

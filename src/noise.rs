@@ -97,4 +97,20 @@ impl SimplexNoise {
 
         70.0 * (n0 + n1 + n2)
     }
+
+    pub fn fractal_noise(x: f32, y: f32, octaves: u32, persistence: f32, frequency: f32) -> f32 {
+        let mut total = 0.0;
+        let mut amplitude = 1.0;
+        let mut max_value = 0.0;
+        let mut freq = frequency;
+    
+        for _ in 0..octaves {
+            total += SimplexNoise::noise(x * freq, y * freq) * amplitude;
+            max_value += amplitude;
+            amplitude *= persistence;
+            freq *= 2.0;
+        }
+    
+        total / max_value
+    }
 }

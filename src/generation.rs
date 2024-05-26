@@ -14,7 +14,7 @@ pub struct Map {
 }
 
 impl Map {
-    // debugging don't mind this
+    /// debugging don't mind this
     pub fn print(&self) {
         let map_size = self.land_map.len() as usize;
 
@@ -27,14 +27,15 @@ impl Map {
         }
     }
 
-    // main method to be called when generating a map
+    /// main method to be called when generating a map
     pub fn new(size: usize) -> Self {
 
         //create land map 4096 -> 1024
         let land_map = generate_land_map(size);
 
         //zoom once more 1024 -> 512
-        let zoomed_land_map = zoom(land_map);
+        let mut zoomed_land_map = zoom(land_map);
+        add_islands(&mut zoomed_land_map);
 
         //add temperates and rainfall using noise
         let mut temp_map: Vec<Vec<f32>> = zoomed_land_map.par_iter().map(|row| vec![0.0; row.len()]).collect();
@@ -56,11 +57,11 @@ impl Map {
 }
 
 
-// generate a map with 2 to 8 proportion of land to water
-// size determines how many pixels there will be (each pixel here is the equivalent to 4096 by 4096 in the final map)
-// a value of 0 will represent water
-// a value of 1 will represent land
-// TODO parallelize
+/// generate a map with 2 to 8 proportion of land to water
+/// size determines how many pixels there will be (each pixel here is the equivalent to 4096 by 4096 in the final map)
+/// a value of 0 will represent water
+/// a value of 1 will represent land
+/// TODO parallelize
 fn generate_islands(size: usize) -> Vec<Vec<i32>> {
     let mut rng = rand::thread_rng();
 
@@ -82,8 +83,8 @@ fn generate_islands(size: usize) -> Vec<Vec<i32>> {
     return board;
 }
 
-// function to "zoom" into the board
-// TODO parallize
+/// function to "zoom" into the board
+/// TODO parallize
 fn zoom(board: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
     let new_size = board.len() * 2;
     let mut new_board = vec![vec![0; new_size]; new_size];
@@ -103,8 +104,8 @@ fn zoom(board: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
     return new_board;
 }
 
-//function to add islands in a 2 to 8 ratio as before
-// TODO parallize
+///function to add islands in a 2 to 8 ratio as before
+/// TODO parallize
 fn add_islands(board: &mut Vec<Vec<i32>>) {
     let mut rng = rand::thread_rng();
 
@@ -120,8 +121,8 @@ fn add_islands(board: &mut Vec<Vec<i32>>) {
     }
 }
 
-// function used to create the baseline land and ocean generation
-// this is called in the beginning to outline land and ocean in general
+/// function used to create the baseline land and ocean generation
+/// this is called in the beginning to outline land and ocean in general
 fn generate_land_map(size: usize) -> Vec<Vec<i32>> {
     let islands = generate_islands(size);
     let mut zoomed_islands = zoom(islands);
@@ -130,27 +131,27 @@ fn generate_land_map(size: usize) -> Vec<Vec<i32>> {
     return zoomed_islands;
 }
 
-// helper function to map values to a specfic range
-// simplex gives output in range [-1 to 1]
-// temperatures needs to be mapped [-10, 30]
-// rainfall needs to be mapped [0, 450]
+/// helper function to map values to a specfic range
+/// simplex gives output in range [-1 to 1]
+/// temperatures needs to be mapped [-10, 30]
+/// rainfall needs to be mapped [0, 450]
 fn map_to_range(value: f32, lower_bound: f32, upper_bound: f32) -> f32{
     lower_bound + (((value - -1.0)*(upper_bound - lower_bound))/(1.0 - -1.0))
 }
 
-// function using simplex noise to create temperatures
-// temperatures needs to be mapped [-10, 30]
+/// function using simplex noise to create temperatures
+/// temperatures needs to be mapped [-10, 30]
 fn add_temperature(empty_temp: &mut Vec<Vec<f32>>){
     for i in 0..empty_temp.len() {
         for j in 0..empty_temp.len() {
-            let value = SimplexNoise::noise(i as f32, j as f32);
+            let value = SimplexNoise::fractal_noise(i as f32, j as f32, 8, 0.5, 0.002);
             empty_temp[i][j] = map_to_range(value, -10.0, 30.0);
         }
     }
 }
 
-// function using simplex noise to create rainfall
-// rainfall needs to be mapped [0, 450]
+/// function using simplex noise to create rainfall
+/// rainfall needs to be mapped [0, 450]
 fn add_rainfall(empty_rain: &mut Vec<Vec<f32>>){
     for i in 0..empty_rain.len() {
         for j in 0..empty_rain.len() {
