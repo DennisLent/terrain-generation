@@ -4,7 +4,19 @@ use std::sync::{Mutex, Arc};
 use crate::sines::NoiseGen;
 use crate::simplex::SimplexNoise;
 
-/// generate a map with 2 to 8 proportion of land to water
+/// function used to create the baseline land and ocean generation
+/// this is called in the beginning to outline land and ocean in general
+/// start with a tile that is 4096 later
+/// zoom to 2048 and add more islands
+pub fn generate_land_map(size: usize) -> Vec<Vec<i32>> {
+    let islands = generate_islands(size);
+    let mut zoomed_islands = zoom_int(islands);
+    add_islands(&mut zoomed_islands);
+    add_islands(&mut zoomed_islands);
+    return zoomed_islands;
+}
+
+/// generate a map with 3 to 7 proportion of land to water
 /// size determines how many pixels there will be (each pixel here is the equivalent to 4096 by 4096 in the final map)
 /// a value of 0 will represent water
 /// a value of 1 will represent land
@@ -18,7 +30,7 @@ pub fn generate_islands(size: usize) -> Vec<Vec<i32>> {
         let mut row_vector = vec![0; size];
         for i in 0..size {
             let number = rng.gen_range(1..11);
-            if number <= 2 {
+            if number <= 3 {
                 row_vector[i] = 1
             } else {
                 row_vector[i] = 0
@@ -95,16 +107,6 @@ pub fn add_islands(board: &mut Vec<Vec<i32>>) {
     }
 }
 
-/// function used to create the baseline land and ocean generation
-/// this is called in the beginning to outline land and ocean in general
-pub fn generate_land_map(size: usize) -> Vec<Vec<i32>> {
-    let islands = generate_islands(size);
-    let mut zoomed_islands = zoom_int(islands);
-    add_islands(&mut zoomed_islands);
-    add_islands(&mut zoomed_islands);
-    return zoomed_islands;
-}
-
 /// helper function to map values to a specfic range
 /// simplex gives output in range [-1 to 1]
 /// temperatures needs to be mapped [-10, 30]
@@ -118,7 +120,7 @@ pub fn map_to_range(value: f32, lower_bound: f32, upper_bound: f32) -> f32{
 pub fn add_temperature(empty_temp: &mut Vec<Vec<f32>>){
     for i in 0..empty_temp.len() {
         for j in 0..empty_temp.len() {
-            let value = SimplexNoise::generate_noise_map(i as f32, j as f32, empty_temp.len() as f32, 1.2);
+            let value = NoiseGen::noise(i as f32, j as f32);
             empty_temp[i][j] = map_to_range(value, -10.0, 30.0);
         }
     }
@@ -129,7 +131,7 @@ pub fn add_temperature(empty_temp: &mut Vec<Vec<f32>>){
 pub fn add_rainfall(empty_rain: &mut Vec<Vec<f32>>){
     for i in 0..empty_rain.len() {
         for j in 0..empty_rain.len() {
-            let value = SimplexNoise::generate_noise_map(i as f32, j as f32, empty_rain.len() as f32, 1.2);
+            let value = NoiseGen::noise(i as f32, j as f32);
             empty_rain[i][j] = map_to_range(value, 0.0, 450.0);
         }
     }
@@ -140,8 +142,54 @@ pub fn add_rainfall(empty_rain: &mut Vec<Vec<f32>>){
 pub fn add_height(empty_height: &mut Vec<Vec<f32>>){
     for i in 0..empty_height.len() {
         for j in 0..empty_height.len() {
-            let value = SimplexNoise::generate_noise_map(i as f32, j as f32, empty_height.len() as f32, 3.0);
+            let value = NoiseGen::noise(i as f32, j as f32);
             empty_height[i][j] = map_to_range(value, 0.0, 255.0);
+        }
+    }
+}
+
+pub fn add_oceans(land_map: &mut Vec<Vec<i32>>) {
+    let mut rng = rand::thread_rng();
+    let height = land_map.len();
+    let width = land_map[0].len();
+
+    for i in 0..height {
+        for j in 0..width {
+            if land_map[i][j] == 0 {
+                let mut potential_shore: bool = false;
+                let mut potential_deep_ocean: bool = true;
+
+                // Check for adjacent tiles
+                for di in -1..=1 {
+                    for dj in -1..=1 {
+                        if di == 0 && dj == 0 {
+                            continue;
+                        }
+                        let ni = i as isize + di;
+                        let nj = j as isize + dj;
+
+                        if ni >= 0 && ni < height as isize && nj >= 0 && nj < width as isize {
+                            let ni = ni as usize;
+                            let nj = nj as usize;
+
+                            if land_map[ni][nj] == 1 {
+                                potential_shore = true;
+                                potential_deep_ocean = false;
+                            } else if land_map[ni][nj] == 0 {
+                                potential_shore = false;
+                            }
+                        }
+                    }
+                }
+
+                if potential_shore && rng.gen::<f32>() < 0.5 {
+                    land_map[i][j] = 2; // Shallow ocean
+                }
+
+                if potential_deep_ocean && rng.gen::<f32>() < 0.8 {
+                    land_map[i][j] = -1; // Deep ocean
+                }
+            }
         }
     }
 }

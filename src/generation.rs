@@ -1,14 +1,21 @@
 use crate::river::create_rivers;
-use crate::gen_utils::{add_islands, generate_land_map, zoom_int, zoom_float, add_height, add_temperature, add_rainfall, smooth_map};
+use crate::gen_utils::{add_islands, generate_land_map, zoom_int, zoom_float, add_height, add_temperature, add_rainfall, smooth_map, add_oceans};
 use rayon::prelude::*;
 
 //resources
 // https://www.alanzucconi.com/2022/06/05/minecraft-world-generation/
 // https://www.youtube.com/watch?v=YyVAaJqYAfE&t=1550s
+
+/// Map struct to hold all the key information about the generated world
 #[derive(Debug)]
 pub struct Map {
+    //land_map holds information about land and oceans 
+    //1 = land, 2 = shallow ocean, 0 = normal ocean, -1 = deep ocean
     pub land_map: Vec<Vec<i32>>,
+
+    //height_map holds information about the individual height of each point
     pub height_map: Vec<Vec<f32>>,
+
     pub temperature_map: Vec<Vec<f32>>,
     pub rainfall_map: Vec<Vec<f32>>,
 }
@@ -29,62 +36,59 @@ impl Map {
 
     /// main method to be called when generating a map
     /// creates the land, temperature, rainfall and height map used for rendering
-    // TODO: add timing to the print statements to see which steps take the longest to improve performance
+    // TODO: add blending of biomes
+    // TODO: add imperfections along so coastline is not too square
     pub fn new(size: usize) -> Self {
 
-        //create land map 4096 -> 1024
+        // create land map 4096 -> 2048
         println!("GENERATING LANDMASSES");
-        let mut land_map = generate_land_map(size);
+        let mut land_2048 = generate_land_map(size);
 
-        //zoom once more 1024 -> 512
-        add_islands(&mut land_map);
-        add_islands(&mut land_map);
-        add_islands(&mut land_map);
+        // zoom once more 2048 -> 1024
+        // add islands
+        // add temperatures
+        let mut land_1024 = zoom_int(land_2048);
+        add_islands(&mut land_1024);
+        add_islands(&mut land_1024);
+        add_islands(&mut land_1024);
 
-        //add temperates and rainfall using noise
-        println!("GENERATING BIOMES");
-        let mut temp_map: Vec<Vec<f32>> = land_map.par_iter().map(|row| vec![0.0; row.len()]).collect();
-        add_temperature(&mut temp_map);
-        let mut rain_map: Vec<Vec<f32>> = land_map.par_iter().map(|row| vec![0.0; row.len()]).collect();
-        add_rainfall(&mut rain_map);
+        println!("GENERATING TEMPERATURES");
+        let mut temp_1024: Vec<Vec<f32>> = land_1024.par_iter().map(|row| vec![0.0; row.len()]).collect();
+        add_temperature(&mut temp_1024);
 
-        // zoom maps again
+        // 1024 -> 512
+        let land_512 = zoom_int(land_1024);
+        let temp_512 = zoom_float(temp_1024);
+
         // 512 -> 256
-        let zoomed_land = zoom_int(land_map);
-        let zoomed_temp = zoom_float(temp_map);
-        let zoomed_rain = zoom_float(rain_map);
+        // create hills to height map
+        // add islands
+        // add deep oceans and shallow oceans
+        println!("GENERATING TERRAIN AND BIOMES");
+        let mut land_256 = zoom_int(land_512);
+        let temp_256 = zoom_float(temp_512);
+        let mut rain_256: Vec<Vec<f32>> = land_256.par_iter().map(|row| vec![0.0; row.len()]).collect();
+        add_rainfall(&mut rain_256);
+        add_oceans(&mut land_256);
 
         // 256 -> 128 -> 64
-        // create hills to height map
-        println!("GENERATING TERRAIN AND HEIGHTS");
-        let land_64 = zoom_int(zoom_int(zoomed_land));
-        let temp_64 = zoom_float(zoom_float(zoomed_temp));
-        let rain_64 = zoom_float(zoom_float(zoomed_rain));
+        // add islan64
+        println!("ADDING HEIGHTS");
+        let mut land_64 = zoom_int(zoom_int(land_256));
+        let temp_64 = zoom_float(zoom_float(temp_256));
+        let rain_64 = zoom_float(zoom_float(rain_256));
+        let mut height_64: Vec<Vec<f32>> = land_64.par_iter().map(|row| vec![0.0; row.len()]).collect();
+        add_height(&mut height_64);
 
-        let mut height_map: Vec<Vec<f32>> = land_64.par_iter().map(|row| vec![0.0; row.len()]).collect();
-        add_height(&mut height_map);
-
-        // 64 -> 32
-        // add islands
-        println!("ADDING DETAILS");
-        let mut land_32 = zoom_int(land_64);
-        let temp_32 = zoom_float(temp_64);
-        let rain_32 = zoom_float(rain_64);
-        let height_32 = zoom_float(height_map);
-        add_islands(&mut land_32);
-
-        // 32 -> 16 -> 8
-        // TODO: add rivers
-        println!("ADDING RIVERS");
-        let mut land_8 = zoom_int(zoom_int(land_32));
-        let temp_8 = smooth_map(zoom_float(zoom_float(temp_32)));
-        let rain_8 = smooth_map(zoom_float(zoom_float(rain_32)));
-        let height_8 = smooth_map(zoom_float(zoom_float(height_32)));
+        // 64 -> 32 -> 16
+        println!("ADDING RIVERS AND EDGES");
+        let mut land_8 = zoom_int(zoom_int(land_64));
+        let temp_8 = smooth_map(zoom_float(zoom_float(temp_64)));
+        let rain_8 = smooth_map(zoom_float(zoom_float(rain_64)));
+        let height_8 = smooth_map(zoom_float(zoom_float(height_64)));
         create_rivers(&height_8, &rain_8, &mut land_8, 5);
 
-        
-
-        // 8 -> 4
+        // 16 -> 8
         // add erosion to coastline and rivers
         // smooth everything
         println!("FINAL TOUCHES");

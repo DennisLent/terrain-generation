@@ -10,10 +10,12 @@ static SAVANNAH: Srgba = Srgba::new(238, 220, 130, 255);         // Light Golden
 static RAINFOREST: Srgba = Srgba::new(34, 139, 34, 255);         // Forest Green
 static TEMP_RAIN: Srgba = Srgba::new(0, 128, 0, 255);            // Green
 static FOREST: Srgba = Srgba::new(34, 139, 34, 255);             // Forest Green
-static WOOLAND: Srgba = Srgba::new(139, 69, 19, 255);            // Saddle Brown
+static WOODLAND: Srgba = Srgba::new(139, 69, 19, 255);            // Saddle Brown
 static GRASSLAND: Srgba = Srgba::new(124, 252, 0, 255);          // Lawn Green
 static TAIGA: Srgba = Srgba::new(0, 100, 0, 255);                // Dark Green
 static TUNDRA: Srgba = Srgba::new(176, 224, 230, 255);           // Powder Blue
+static SHALLOW_OCEAN: Srgba = Srgba::new(135, 206, 235, 255);    // Sky Blue
+static DEEP_OCEAN: Srgba = Srgba::new(0, 0, 139, 255);           // Dark Blue
 
 /// struct to contain the main information about a rectangle to be drawn
 struct RectangleProperties {
@@ -27,6 +29,15 @@ fn assign_color(terrain_type: i32, height: f32, temperature: f32, rainfall: f32)
     // water for now just keep it blue
     if terrain_type == 0 || height <= 65.0{
         Srgba::BLUE
+    }
+    else if terrain_type == 2{
+        SHALLOW_OCEAN
+    }
+    else if terrain_type == -1 {
+        DEEP_OCEAN
+    }
+    else if terrain_type == 1 && height > 180.0 {
+        TUNDRA
     }
     // land tile so need to check temperature and rainfall
     else{
@@ -43,7 +54,7 @@ fn assign_color(terrain_type: i32, height: f32, temperature: f32, rainfall: f32)
             if rainfall < 50.0 {
                 GRASSLAND
             } else if rainfall < 120.0 {
-                WOOLAND
+                WOODLAND
             } 
             else if rainfall < 250.0 {
                 FOREST
