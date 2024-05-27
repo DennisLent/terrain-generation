@@ -1,12 +1,12 @@
 use generation::Map;
 use render::render2d;
 
+mod gen_utils;
 mod generation;
 mod render;
-mod sines;
 mod river;
-mod gen_utils;
 mod simplex;
+mod sines;
 
 fn main() {
     let map = Map::new(2);

@@ -1,5 +1,8 @@
+use crate::gen_utils::{
+    add_height, add_islands, add_oceans, add_rainfall, add_temperature, generate_land_map,
+    smooth_map, zoom_float, zoom_int,
+};
 use crate::river::create_rivers;
-use crate::gen_utils::{add_islands, generate_land_map, zoom_int, zoom_float, add_height, add_temperature, add_rainfall, smooth_map, add_oceans};
 use rayon::prelude::*;
 
 //resources
@@ -9,7 +12,7 @@ use rayon::prelude::*;
 /// Map struct to hold all the key information about the generated world
 #[derive(Debug)]
 pub struct Map {
-    //land_map holds information about land and oceans 
+    //land_map holds information about land and oceans
     //1 = land, 2 = shallow ocean, 0 = normal ocean, -1 = deep ocean
     pub land_map: Vec<Vec<i32>>,
 
@@ -26,10 +29,16 @@ impl Map {
         let map_size = self.land_map.len() as usize;
 
         println!("Land_val, height, temp, rain");
-    
+
         for i in 0..map_size {
             for j in 0..map_size {
-                println!("{} {} {} {}", self.land_map[i][j], self.height_map[i][j], self.temperature_map[i][j], self.rainfall_map[i][j]);
+                println!(
+                    "{} {} {} {}",
+                    self.land_map[i][j],
+                    self.height_map[i][j],
+                    self.temperature_map[i][j],
+                    self.rainfall_map[i][j]
+                );
             }
         }
     }
@@ -39,10 +48,9 @@ impl Map {
     // TODO: add blending of biomes
     // TODO: add imperfections along so coastline is not too square
     pub fn new(size: usize) -> Self {
-
         // create land map 4096 -> 2048
         println!("GENERATING LANDMASSES");
-        let mut land_2048 = generate_land_map(size);
+        let land_2048 = generate_land_map(size);
 
         // zoom once more 2048 -> 1024
         // add islands
@@ -53,7 +61,10 @@ impl Map {
         add_islands(&mut land_1024);
 
         println!("GENERATING TEMPERATURES");
-        let mut temp_1024: Vec<Vec<f32>> = land_1024.par_iter().map(|row| vec![0.0; row.len()]).collect();
+        let mut temp_1024: Vec<Vec<f32>> = land_1024
+            .par_iter()
+            .map(|row| vec![0.0; row.len()])
+            .collect();
         add_temperature(&mut temp_1024);
 
         // 1024 -> 512
@@ -67,17 +78,21 @@ impl Map {
         println!("GENERATING TERRAIN AND BIOMES");
         let mut land_256 = zoom_int(land_512);
         let temp_256 = zoom_float(temp_512);
-        let mut rain_256: Vec<Vec<f32>> = land_256.par_iter().map(|row| vec![0.0; row.len()]).collect();
+        let mut rain_256: Vec<Vec<f32>> = land_256
+            .par_iter()
+            .map(|row| vec![0.0; row.len()])
+            .collect();
         add_rainfall(&mut rain_256);
         add_oceans(&mut land_256);
 
         // 256 -> 128 -> 64
         // add islan64
         println!("ADDING HEIGHTS");
-        let mut land_64 = zoom_int(zoom_int(land_256));
+        let land_64 = zoom_int(zoom_int(land_256));
         let temp_64 = zoom_float(zoom_float(temp_256));
         let rain_64 = zoom_float(zoom_float(rain_256));
-        let mut height_64: Vec<Vec<f32>> = land_64.par_iter().map(|row| vec![0.0; row.len()]).collect();
+        let mut height_64: Vec<Vec<f32>> =
+            land_64.par_iter().map(|row| vec![0.0; row.len()]).collect();
         add_height(&mut height_64);
 
         // 64 -> 32 -> 16
@@ -97,7 +112,6 @@ impl Map {
         let final_rain = smooth_map(zoom_float(smooth_map(rain_8)));
         let final_height = smooth_map(zoom_float(smooth_map(height_8)));
 
-
         Map {
             land_map: final_land,
             height_map: final_height,
@@ -106,7 +120,7 @@ impl Map {
         }
     }
 
-    pub fn board_size(&self) -> usize{
-        self.land_map.len()*self.land_map.len()
+    pub fn board_size(&self) -> usize {
+        self.land_map.len() * self.land_map.len()
     }
 }

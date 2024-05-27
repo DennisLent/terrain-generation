@@ -1,9 +1,8 @@
-use rand::Rng;
-use rayon::prelude::*;
-use std::sync::{Mutex, Arc};
-use crate::sines::NoiseGen;
 use crate::simplex::SimplexNoise;
 use rand::prelude::SliceRandom;
+use rand::Rng;
+use rayon::prelude::*;
+use std::sync::{Arc, Mutex};
 
 /// function used to create the baseline land and ocean generation
 /// this is called in the beginning to outline land and ocean in general
@@ -47,7 +46,7 @@ pub fn generate_islands(size: usize) -> Vec<Vec<i32>> {
 /// this is only for landmasses to reduce the amount of straight edges the chance is 40%
 pub fn zoom_int(board: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
     let new_size = board.len() * 2;
-    let mut new_board = vec![vec![0; new_size]; new_size];
+    let new_board = vec![vec![0; new_size]; new_size];
     let new_board_mutex = Arc::new(Mutex::new(new_board));
     (0..board.len()).into_par_iter().for_each(|i| {
         (0..board.len()).into_par_iter().for_each(|j| {
@@ -66,9 +65,9 @@ pub fn zoom_int(board: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
             // Add imperfections
             let mut rng = rand::thread_rng();
             let mut add_variation = |ni: usize, nj: usize| {
-                if rng.gen::<f32>() < 0.4 { 
+                if rng.gen::<f32>() < 0.4 {
                     let mut neighbors = vec![board_value];
-                    
+
                     // Collect valid neighbors
                     if ni > 0 {
                         neighbors.push(new_board[(ni - 1) / 2][nj / 2]);
@@ -95,14 +94,17 @@ pub fn zoom_int(board: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
         });
     });
 
-    Arc::try_unwrap(new_board_mutex).unwrap().into_inner().unwrap()
+    Arc::try_unwrap(new_board_mutex)
+        .unwrap()
+        .into_inner()
+        .unwrap()
 }
 
 /// function to "zoom" into the board for floats and add imperfections
 /// since float is for height, temp and rainfall this chance will be 25%
 pub fn zoom_float(board: Vec<Vec<f32>>) -> Vec<Vec<f32>> {
     let new_size = board.len() * 2;
-    let mut new_board = vec![vec![0.0; new_size]; new_size];
+    let new_board = vec![vec![0.0; new_size]; new_size];
     let new_board_mutex = Arc::new(Mutex::new(new_board));
     (0..board.len()).into_par_iter().for_each(|i| {
         (0..board.len()).into_par_iter().for_each(|j| {
@@ -121,9 +123,10 @@ pub fn zoom_float(board: Vec<Vec<f32>>) -> Vec<Vec<f32>> {
             // Add imperfections
             let mut rng = rand::thread_rng();
             let mut add_variation = |ni: usize, nj: usize| {
-                if rng.gen::<f32>() < 0.25 {  // 25% chance to change the value
+                if rng.gen::<f32>() < 0.25 {
+                    // 25% chance to change the value
                     let mut neighbors = vec![board_value];
-                    
+
                     // Collect valid neighbors
                     if ni > 0 {
                         neighbors.push(new_board[(ni - 1) / 2][nj / 2]);
@@ -150,7 +153,10 @@ pub fn zoom_float(board: Vec<Vec<f32>>) -> Vec<Vec<f32>> {
         });
     });
 
-    Arc::try_unwrap(new_board_mutex).unwrap().into_inner().unwrap()
+    Arc::try_unwrap(new_board_mutex)
+        .unwrap()
+        .into_inner()
+        .unwrap()
 }
 
 ///function to add islands in a 2 to 8 ratio as before
@@ -174,16 +180,16 @@ pub fn add_islands(board: &mut Vec<Vec<i32>>) {
 /// simplex gives output in range [-1 to 1]
 /// temperatures needs to be mapped [-10, 30]
 /// rainfall needs to be mapped [0, 450]
-pub fn map_to_range(value: f32, lower_bound: f32, upper_bound: f32) -> f32{
-    lower_bound + (((value - -1.0)*(upper_bound - lower_bound))/(1.0 - -1.0))
+pub fn map_to_range(value: f32, lower_bound: f32, upper_bound: f32) -> f32 {
+    lower_bound + (((value - -1.0) * (upper_bound - lower_bound)) / (1.0 - -1.0))
 }
 
 /// function using simple noise to create temperatures
 /// temperatures needs to be mapped [-10, 30]
-pub fn add_temperature(empty_temp: &mut Vec<Vec<f32>>){
+pub fn add_temperature(empty_temp: &mut Vec<Vec<f32>>) {
     for i in 0..empty_temp.len() {
         for j in 0..empty_temp.len() {
-            let value = NoiseGen::noise(i as f32, j as f32);
+            let value = SimplexNoise::noise(i as f32, j as f32);
             empty_temp[i][j] = map_to_range(value, -10.0, 30.0);
         }
     }
@@ -191,10 +197,10 @@ pub fn add_temperature(empty_temp: &mut Vec<Vec<f32>>){
 
 /// function using simple noise to create rainfall
 /// rainfall needs to be mapped [0, 450]
-pub fn add_rainfall(empty_rain: &mut Vec<Vec<f32>>){
+pub fn add_rainfall(empty_rain: &mut Vec<Vec<f32>>) {
     for i in 0..empty_rain.len() {
         for j in 0..empty_rain.len() {
-            let value = NoiseGen::noise(i as f32, j as f32);
+            let value = SimplexNoise::noise(i as f32, j as f32);
             empty_rain[i][j] = map_to_range(value, 0.0, 450.0);
         }
     }
@@ -202,10 +208,10 @@ pub fn add_rainfall(empty_rain: &mut Vec<Vec<f32>>){
 
 /// function using simple noise to generate elevation on the map
 /// using minecraft as a reference we map height [0, 255] where 65 is sea level for more diversity
-pub fn add_height(empty_height: &mut Vec<Vec<f32>>){
+pub fn add_height(empty_height: &mut Vec<Vec<f32>>) {
     for i in 0..empty_height.len() {
         for j in 0..empty_height.len() {
-            let value = NoiseGen::noise(i as f32, j as f32);
+            let value = SimplexNoise::noise(i as f32, j as f32);
             empty_height[i][j] = map_to_range(value, 0.0, 255.0);
         }
     }

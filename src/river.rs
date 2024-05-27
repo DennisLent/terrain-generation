@@ -1,23 +1,31 @@
+use rand::prelude::SliceRandom;
+use rayon::prelude::*;
 use std::collections::HashSet;
 use std::collections::VecDeque;
-use rayon::prelude::*;
-use rand::prelude::SliceRandom;
 
 /// struct to hold information about a river
 
 /// function to find proper starting points for rivers
 /// a river should start in a high elevation height > 150
 /// and good rainfall precipitaion > 200
-fn find_river_starting_points(height_map: &Vec<Vec<f32>>, rain_map: &Vec<Vec<f32>>) -> Vec<(usize, usize)>{
-    let starting_points: Vec<(usize, usize)> = (0..height_map.len()).into_par_iter().flat_map(|i| {
-        (0..height_map[i].len()).into_par_iter().filter_map(move |j| {
-            if height_map[i][j] > 150.0 && rain_map[i][j] > 200.0 {
-                Some((i, j))
-            } else {
-                None
-            }
+fn find_river_starting_points(
+    height_map: &Vec<Vec<f32>>,
+    rain_map: &Vec<Vec<f32>>,
+) -> Vec<(usize, usize)> {
+    let starting_points: Vec<(usize, usize)> = (0..height_map.len())
+        .into_par_iter()
+        .flat_map(|i| {
+            (0..height_map[i].len())
+                .into_par_iter()
+                .filter_map(move |j| {
+                    if height_map[i][j] > 150.0 && rain_map[i][j] > 200.0 {
+                        Some((i, j))
+                    } else {
+                        None
+                    }
+                })
         })
-    }).collect();
+        .collect();
 
     starting_points
 }
@@ -27,7 +35,11 @@ fn find_river_starting_points(height_map: &Vec<Vec<f32>>, rain_map: &Vec<Vec<f32
 /// or in a lake height_map < 65
 /// need to find the closest point using BFS
 // TODO: change it to A* to save on time?
-fn find_river_end(start: (usize, usize), height_map: &Vec<Vec<f32>>, land_map: &Vec<Vec<i32>>) -> Option<(usize, usize)>{
+fn find_river_end(
+    start: (usize, usize),
+    height_map: &Vec<Vec<f32>>,
+    land_map: &Vec<Vec<i32>>,
+) -> Option<(usize, usize)> {
     let mut visited = HashSet::new();
     let mut queue = VecDeque::new();
     queue.push_back(start);
@@ -38,9 +50,15 @@ fn find_river_end(start: (usize, usize), height_map: &Vec<Vec<f32>>, land_map: &
         }
         // check adjacent points
         for &neighbor in &[(-1, 0), (1, 0), (0, -1), (0, 1)] {
-            let new_point = ((current.0 as isize + neighbor.0) as usize, (current.1 as isize + neighbor.1) as usize);
+            let new_point = (
+                (current.0 as isize + neighbor.0) as usize,
+                (current.1 as isize + neighbor.1) as usize,
+            );
 
-            if !visited.contains(&new_point) && new_point.0 < land_map.len() && new_point.1 < land_map[0].len(){
+            if !visited.contains(&new_point)
+                && new_point.0 < land_map.len()
+                && new_point.1 < land_map[0].len()
+            {
                 visited.insert(new_point);
                 queue.push_back(new_point);
             }
@@ -60,10 +78,11 @@ fn filter_points(points: Vec<(usize, usize)>, min_distance: usize) -> Vec<(usize
         let mut too_close = false;
         for i in 0..=min_distance {
             for j in 0..=min_distance {
-                if visited.contains(&(x.wrapping_sub(i), y.wrapping_sub(j))) ||
-                   visited.contains(&(x.wrapping_add(i), y.wrapping_sub(j))) ||
-                   visited.contains(&(x.wrapping_sub(i), y.wrapping_add(j))) ||
-                   visited.contains(&(x.wrapping_add(i), y.wrapping_add(j))) {
+                if visited.contains(&(x.wrapping_sub(i), y.wrapping_sub(j)))
+                    || visited.contains(&(x.wrapping_add(i), y.wrapping_sub(j)))
+                    || visited.contains(&(x.wrapping_sub(i), y.wrapping_add(j)))
+                    || visited.contains(&(x.wrapping_add(i), y.wrapping_add(j)))
+                {
                     too_close = true;
                     break;
                 }
@@ -81,10 +100,13 @@ fn filter_points(points: Vec<(usize, usize)>, min_distance: usize) -> Vec<(usize
     filtered_points
 }
 
-
 /// Function to find a path from start to end using BFS
 /// We add a height constraint to make sure that we go from a high altitude to a low altitude
-fn find_path(start: (usize, usize), end: (usize, usize), height_map: &Vec<Vec<f32>>) -> Option<Vec<(usize, usize)>> {
+fn find_path(
+    start: (usize, usize),
+    end: (usize, usize),
+    height_map: &Vec<Vec<f32>>,
+) -> Option<Vec<(usize, usize)>> {
     let mut visited = HashSet::new();
     let mut queue = VecDeque::new();
     let mut came_from = vec![vec![None; height_map[0].len()]; height_map.len()];
@@ -110,8 +132,14 @@ fn find_path(start: (usize, usize), end: (usize, usize), height_map: &Vec<Vec<f3
         neighbors.shuffle(&mut rng); // Randomize the order of exploration
 
         for &(dx, dy) in &neighbors {
-            let new_point = ((current.0 as isize + dx) as usize, (current.1 as isize + dy) as usize);
-            if new_point.0 < height_map.len() && new_point.1 < height_map[0].len() && !visited.contains(&new_point) {
+            let new_point = (
+                (current.0 as isize + dx) as usize,
+                (current.1 as isize + dy) as usize,
+            );
+            if new_point.0 < height_map.len()
+                && new_point.1 < height_map[0].len()
+                && !visited.contains(&new_point)
+            {
                 if height_map[new_point.0][new_point.1] <= height_map[current.0][current.1] {
                     visited.insert(new_point);
                     queue.push_back(new_point);
@@ -125,7 +153,12 @@ fn find_path(start: (usize, usize), end: (usize, usize), height_map: &Vec<Vec<f3
 }
 
 /// main function called to create the rivers and update the land_map
-pub fn create_rivers(height_map: &Vec<Vec<f32>>, rain_map: &Vec<Vec<f32>>, land_map: &mut Vec<Vec<i32>>, min_distance: usize) {
+pub fn create_rivers(
+    height_map: &Vec<Vec<f32>>,
+    rain_map: &Vec<Vec<f32>>,
+    land_map: &mut Vec<Vec<i32>>,
+    min_distance: usize,
+) {
     let starting_points = find_river_starting_points(height_map, rain_map);
     let filtered_points = filter_points(starting_points, min_distance);
 
@@ -157,5 +190,3 @@ pub fn create_rivers(height_map: &Vec<Vec<f32>>, rain_map: &Vec<Vec<f32>>, land_
 //         }
 //     }
 // }
-
-
