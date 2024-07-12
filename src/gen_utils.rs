@@ -43,7 +43,7 @@ pub fn generate_islands(size: usize) -> Vec<Vec<i32>> {
 }
 
 /// function to "zoom" into the board for integers and add imperfections
-/// this is only for landmasses to reduce the amount of straight edges the chance is 40%
+/// this is only for landmasses to reduce the amount of straight edges the chance is 50%
 pub fn zoom_int(board: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
     let new_size = board.len() * 2;
     let new_board = vec![vec![0; new_size]; new_size];
@@ -65,7 +65,7 @@ pub fn zoom_int(board: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
             // Add imperfections
             let mut rng = rand::thread_rng();
             let mut add_variation = |ni: usize, nj: usize| {
-                if rng.gen::<f32>() < 0.4 {
+                if rng.gen::<f32>() < 0.5 {
                     let mut neighbors = vec![board_value];
 
                     // Collect valid neighbors
@@ -101,7 +101,7 @@ pub fn zoom_int(board: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
 }
 
 /// function to "zoom" into the board for floats and add imperfections
-/// since float is for height, temp and rainfall this chance will be 25%
+/// since float is for height, temp and rainfall this chance will be 30%
 pub fn zoom_float(board: Vec<Vec<f32>>) -> Vec<Vec<f32>> {
     let new_size = board.len() * 2;
     let new_board = vec![vec![0.0; new_size]; new_size];
@@ -123,7 +123,7 @@ pub fn zoom_float(board: Vec<Vec<f32>>) -> Vec<Vec<f32>> {
             // Add imperfections
             let mut rng = rand::thread_rng();
             let mut add_variation = |ni: usize, nj: usize| {
-                if rng.gen::<f32>() < 0.25 {
+                if rng.gen::<f32>() < 0.3 {
                     // 25% chance to change the value
                     let mut neighbors = vec![board_value];
 
@@ -255,7 +255,7 @@ pub fn add_oceans(land_map: &mut Vec<Vec<i32>>) {
                     land_map[i][j] = 2; // Shallow ocean
                 }
 
-                if potential_deep_ocean && rng.gen::<f32>() < 0.8 {
+                if potential_deep_ocean && rng.gen::<f32>() < 0.9 {
                     land_map[i][j] = -1; // Deep ocean
                 }
             }

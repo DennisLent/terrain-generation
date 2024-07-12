@@ -9,7 +9,7 @@ mod simplex;
 mod sines;
 
 fn main() {
-    let map = Map::new(2);
+    let map = Map::new(1);
 
     //map.print();
 
