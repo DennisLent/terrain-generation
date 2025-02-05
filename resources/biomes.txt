@@ -1,0 +1,17 @@
+Biome	                    Rainfall    Temperature     Height      Color               Description
+Tundra	                    0.0 - 0.3	-1.0 - 0.1	    0.5 - 1.0	175, 207, 223       Cold, high-altitude areas with low precipitation.
+BorealForest	            0.3 - 0.6	-0.5 - 0.2	    0.4 - 0.8	85, 107, 47         Dense evergreen forests, moderate rainfall, cold climates.
+TemperateSeasonalForest	    0.4 - 0.7	0.1 - 0.4	    0.3 - 0.7	34, 139, 34         Deciduous forests with moderate rainfall and temperature.
+TemperateRainForest	        0.6 - 1.0	0.1 - 0.5	    0.3 - 0.7	0, 100, 0           Wet, cool forests with consistent rainfall.
+Woodland	                0.2 - 0.4	0.2 - 0.6	    0.2 - 0.6	154, 205, 50        Sparse trees with open grassy areas and moderate rainfall.
+SubtropicalDesert	        0.0 - 0.2	0.6 - 1.0	    0.2 - 0.5	210, 180, 140       Hot, dry deserts with low rainfall and high temperatures.
+TemperateDesert	            0.0 - 0.2	0.2 - 0.6	    0.2 - 0.5	244, 164, 96        Cooler deserts with low rainfall and moderate temperatures.
+TropicalRainforest	        0.8 - 1.0	0.6 - 1.0	    0.1 - 0.4	0, 128, 0           Dense rainforests with very high rainfall and warm climates.
+TropicalSeasonalForest	    0.6 - 0.8	0.6 - 0.9	    0.2 - 0.5	107, 142, 35        Warm forests with seasonal rainfall variations.
+Grassland	                0.2 - 0.4	0.3 - 0.7	    0.1 - 0.4	189, 183, 107       Open plains with moderate rainfall and temperatures.
+Savannah	                0.3 - 0.5	0.6 - 1.0	    0.1 - 0.4	238, 232, 170       Warm grasslands with scattered trees and seasonal rains.
+Ocean	                    0.6 - 1.0	0.0 - 1.0	    0.0 - 0.1	0, 105, 148         Deep water with no land features.
+ShallowSea	                0.6 - 1.0	0.2 - 0.8	    0.0 - 0.1	64, 164, 223        Shallow coastal areas close to land.
+CoralReef	                0.8 - 1.0	0.6 - 1.0	    0.0 - 0.1	255, 160, 122       Warm, shallow waters rich in marine biodiversity.
+DeepSea	                    0.6 - 1.0	0.0 - 0.5	    0.0 - 0.1	0, 51, 102          Very deep water far from coastal areas.
+CoastalWaters	            0.4 - 0.7	0.3 - 0.8	    0.0 - 0.1	70, 130, 180        Coastal waters with moderate temperature and rainfall.
