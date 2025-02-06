@@ -3,36 +3,6 @@ use bevy::render::mesh::{Mesh, VertexAttributeValues};
 use noise::{BasicMulti, NoiseFn, Perlin};
 use rand::Rng;
 
-/// Generates a temperature map for the world
-fn generate_temperature_map(size: usize, noise_scale: f64, seed: u32) -> Vec<Vec<f64>> {
-    let noise = BasicMulti::<Perlin>::new(seed);
-    let mut map = vec![vec![0.0; size]; size];
-
-    for x in 0..size {
-        for z in 0..size {
-            let val = noise.get([x as f64 * noise_scale, z as f64 * noise_scale]);
-            map[x][z] = val.clamp(-1.0, 1.0); // Normalize to [-1, 1] range
-        }
-    }
-
-    map
-}
-
-/// Generates a rainfall map for the world
-fn generate_rainfall_map(size: usize, noise_scale: f64, seed: u32) -> Vec<Vec<f64>> {
-    let noise = BasicMulti::<Perlin>::new(seed);
-    let mut map = vec![vec![0.0; size]; size];
-
-    for x in 0..size {
-        for z in 0..size {
-            let val = noise.get([x as f64 * noise_scale, z as f64 * noise_scale]);
-            map[x][z] = val.clamp(0.0, 1.0); // Normalize to [0, 1] range
-        }
-    }
-
-    map
-}
-
 /// Assigns a color based on the height, temperature and rainfall
 fn assign_biome(height: f64, rainfall: f64, temperature: f64, height_multiplier: f32) -> [f32; 4] {
     // Normalize height based on height_multiplier
@@ -84,7 +54,7 @@ pub fn generate_terrain_mesh(size: f32, subdivisions: u32, height_multiplier: f3
             let mut height_val = base_noise.get([x * 0.5, z * 0.5]) * 0.4;
 
             // Medium-scale terrain variations (hills)
-            height_val += base_noise.get([x * 1.5, z * 1.5]) * 0.6;
+            height_val += base_noise.get([x * 1.5, z * 1.5]) * 0.4;
 
             // Small-scale details (rocky areas and finer terrain variation)
             height_val += detail_noise.get([x * 6.0, z * 6.0]) * 0.2;

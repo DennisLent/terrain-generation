@@ -1,4 +1,4 @@
-mod generate_world;
+mod world_generation;
 use bevy::{
     color::palettes::css::*,
     pbr::wireframe::{Wireframe, WireframeConfig, WireframePlugin},
@@ -8,8 +8,7 @@ use bevy::{
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 use bevy::render::mesh::Mesh;
 use std::f32::consts::PI;
-use generate_world::generate_terrain_mesh;
-
+use world_generation::generator::generate_terrain_mesh;
 
 fn main() {
     App::new()
@@ -44,11 +43,17 @@ fn main() {
 fn startup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>) {
     commands.spawn((
         Camera3d { ..default() },
-        Transform::from_xyz(0.0, 20.0, 75.0).looking_at(Vec3::new(0.0, 1.0, 0.0), Vec3::Y),
+        Transform::from_xyz(0.0, 100.0, 50.0).looking_at(Vec3::ZERO, Vec3::Y),
         PanOrbitCamera::default(),
     ));
 
-    let generated_map = generate_terrain_mesh(2048.0, 400, 80.0, 0.005, None);
+    // how many 4096 chunks we will have
+    let world_chunks: f32 = 4.0;
+    let world_size: f32 = world_chunks*4096.0;
+
+
+    let generated_map = generate_terrain_mesh(world_size, 500, 280.0, 1);
+    println!("WORLD GENERATED!");
 
     commands.spawn((
         Mesh3d(meshes.add(generated_map)),
