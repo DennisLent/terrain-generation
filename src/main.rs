@@ -1,15 +1,19 @@
-mod generate_world;
+mod generate_voxel_world;
+use bevy::render::mesh::Mesh;
 use bevy::{
     color::palettes::css::*,
     pbr::wireframe::{Wireframe, WireframeConfig, WireframePlugin},
     prelude::*,
-    render::{render_resource::WgpuFeatures, settings::{RenderCreation, WgpuSettings}, RenderPlugin},
+    render::{
+        render_resource::WgpuFeatures,
+        settings::{RenderCreation, WgpuSettings},
+        RenderPlugin,
+    },
 };
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
-use bevy::render::mesh::Mesh;
 use std::f32::consts::PI;
-use generate_world::generate_terrain_mesh;
-
+use generate_voxel_world::generate_chunk::generate_chunk;
+use generate_voxel_world::meshing::mesh_chunk;
 
 fn main() {
     App::new()
@@ -41,20 +45,45 @@ fn main() {
         .run();
 }
 
-fn startup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>) {
+fn startup(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
     commands.spawn((
         Camera3d { ..default() },
-        Transform::from_xyz(0.0, 20.0, 75.0).looking_at(Vec3::new(0.0, 1.0, 0.0), Vec3::Y),
+        Transform::from_xyz(0.0, 50.0, 100.0).looking_at(Vec3::ZERO, Vec3::Y),
         PanOrbitCamera::default(),
     ));
 
-    let generated_map = generate_terrain_mesh(2048.0, 400, 80.0, 0.005, None);
+    // Generate and spawn multiple chunks
+    let chunk_size = 32; // Adjust this to match CHUNK_SIZE
+    let world_size = 2; // Number of chunks in each direction
 
-    commands.spawn((
-        Mesh3d(meshes.add(generated_map)),
-        MeshMaterial3d(materials.add(Color::WHITE)),
-        Terrain,
-    ));
+    for chunk_x in -world_size..world_size {
+        for chunk_z in -world_size..world_size {
+            let chunk_voxels = generate_chunk(chunk_x as i32, chunk_z as i32, 42);
+            let chunk_mesh = mesh_chunk(&chunk_voxels);
+
+            println!(
+                "Spawning chunk at position: ({}, {}, {})",
+                chunk_x as f32 * chunk_size as f32,
+                0.0,
+                chunk_z as f32 * chunk_size as f32
+            );
+
+            commands.spawn((
+                Mesh3d(meshes.add(chunk_mesh)),
+                MeshMaterial3d(materials.add(Color::WHITE)),
+                Transform::from_xyz(
+                    chunk_x as f32 * chunk_size as f32,
+                    0.0,
+                    chunk_z as f32 * chunk_size as f32,
+                ),
+                Terrain,
+            ));
+        }
+    }
 
     commands.spawn((
         DirectionalLight {
@@ -63,7 +92,7 @@ fn startup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materia
             ..default()
         },
         Transform {
-            translation: Vec3::new(0.0, 2.0, 0.0),
+            translation: Vec3::new(0.0, 100.0, 0.0),
             rotation: Quat::from_rotation_x(-PI / 4.),
             ..default()
         },
