@@ -1,4 +1,5 @@
 mod world_generation;
+mod utils;
 use bevy::{
     color::palettes::css::*,
     pbr::wireframe::{Wireframe, WireframeConfig, WireframePlugin},
@@ -52,7 +53,7 @@ fn startup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materia
     let world_size: f32 = world_chunks*4096.0;
 
 
-    let generated_map = generate_terrain_mesh(world_size, 500, 280.0, 1);
+    let generated_map = generate_terrain_mesh(world_size, 500, 1);
     println!("WORLD GENERATED!");
 
     commands.spawn((

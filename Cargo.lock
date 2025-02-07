@@ -3804,6 +3804,7 @@ dependencies = [
  "bevy_panorbit_camera",
  "noise",
  "rand 0.9.0",
+ "rayon",
 ]
 
 [[package]]

@@ -1,3 +1,5 @@
+pub mod tile;
 pub mod islands;
 pub mod generator;
-pub mod biome_colors;
+pub mod biomes;
+pub mod climate;
