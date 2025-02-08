@@ -9,7 +9,9 @@ use bevy::{
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 use bevy::render::mesh::Mesh;
 use std::f32::consts::PI;
-use world_generation::generator::generate_terrain_mesh;
+use pyri_tooltip::prelude::*;
+use world_generation::meshing::generate_terrain_mesh;
+use utils::mouse::{update_hovered_tile, HoveredTile, update_tooltip, CameraState};
 
 fn main() {
     App::new()
@@ -36,32 +38,45 @@ fn main() {
             // Can be changed per mesh using the `WireframeColor` component.
             default_color: WHITE.into(),
         })
+        // Add the tooltip plugin
+        .add_plugins(TooltipPlugin::default())
         .add_systems(Startup, startup)
         .add_systems(Update, toggle_wireframe)
+        .insert_resource(HoveredTile::default())
+        .add_systems(Update, update_hovered_tile)
+        .add_systems(Update, update_tooltip)
         .run();
 }
 
 fn startup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>) {
+    // Spawn camera
     commands.spawn((
         Camera3d { ..default() },
         Transform::from_xyz(0.0, 100.0, 50.0).looking_at(Vec3::ZERO, Vec3::Y),
         PanOrbitCamera::default(),
     ));
 
+    commands.insert_resource(CameraState::default());
+
     // how many 4096 chunks we will have
     let world_chunks: f32 = 4.0;
     let world_size: f32 = world_chunks*4096.0;
 
 
-    let generated_map = generate_terrain_mesh(world_size, 500, 1);
+    let (mesh, world_map) = generate_terrain_mesh(world_size, 1000, 1);
     println!("WORLD GENERATED!");
 
+    // Insert world_map as resource
+    commands.insert_resource(world_map);
+
+    // Spawn mesh
     commands.spawn((
-        Mesh3d(meshes.add(generated_map)),
+        Mesh3d(meshes.add(mesh)),
         MeshMaterial3d(materials.add(Color::WHITE)),
         Terrain,
     ));
 
+    // Spawn lighting
     commands.spawn((
         DirectionalLight {
             illuminance: light_consts::lux::OVERCAST_DAY,
@@ -74,6 +89,10 @@ fn startup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materia
             ..default()
         },
     ));
+
+    // Spawn tooltip UI
+    commands.spawn(Tooltip::cursor("Hover over a tile"));
+    
 }
 
 #[derive(Component)]

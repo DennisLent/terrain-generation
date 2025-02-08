@@ -14,7 +14,7 @@ fn generate_world_map(size: f32, seed: u32) -> WorldMap {
     world_map
 }
 
-pub fn generate_terrain_mesh(size: f32, subdivisions: u32, seed: u32) -> Mesh {
+pub fn generate_terrain_mesh(size: f32, subdivisions: u32, seed: u32) -> (Mesh, WorldMap) {
     let mut mesh = Mesh::from(Plane3d::default().mesh().size(size, size).subdivisions(subdivisions));
 
     // Generate the world map (heights, temperatures, etc.)
@@ -46,6 +46,7 @@ pub fn generate_terrain_mesh(size: f32, subdivisions: u32, seed: u32) -> Mesh {
             // Assign biome-based color
             let biome_color = world_map.get_biome(x_index, z_index).unwrap_or(Biome::Grassland).color();
             colors.push(biome_color);
+
         }
 
         // Assign vertex colors to the mesh
@@ -55,5 +56,5 @@ pub fn generate_terrain_mesh(size: f32, subdivisions: u32, seed: u32) -> Mesh {
     println!("Recomputing normals");
     mesh.compute_normals();
 
-    mesh
+    (mesh, world_map)
 }

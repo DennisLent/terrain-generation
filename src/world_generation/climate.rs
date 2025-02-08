@@ -42,56 +42,7 @@ pub fn generate_climate_layer(world_map: &mut WorldMap, seed: u32) {
     }
 }
 
-/// Blends the climate zones at different zoom levels
-/// We take the average temperature and rainfall in a chunk and assign it to that region
-fn blend_climate(world_map: &mut WorldMap, chunk_size: u32) {
-    let size = world_map.get_size();
-    let directions = [(-1, 0), (1, 0), (0, -1), (0, 1)];
-
-    let mut blended_map = world_map.tiles.clone();
-
-    for chunk_x in (0..size).step_by(chunk_size as usize) {
-        for chunk_z in (0..size).step_by(chunk_size as usize) {
-            let mut total_temp = 0.0;
-            let mut total_rainfall = 0.0;
-            let mut count = 0;
-
-            // Collect neighboring values
-            for (dx, dz) in directions.iter() {
-                let nx = chunk_x as isize + dx * chunk_size as isize;
-                let nz = chunk_z as isize + dz * chunk_size as isize;
-
-                if nx >= 0 && nz >= 0 && nx < size as isize && nz < size as isize {
-                    total_temp += world_map.get_temperature(nx as usize, nz as usize);
-                    total_rainfall += world_map.get_rainfall(nx as usize, nz as usize);
-                    count += 1;
-                }
-            }
-
-            // Calculate the blended values
-            let current_temp = world_map.get_temperature(chunk_x as usize, chunk_z as usize);
-            let current_rainfall = world_map.get_rainfall(chunk_x as usize, chunk_z as usize);
-
-            let blended_temp = (current_temp + total_temp) / (count as f32 + 1.0);
-            let blended_rainfall = (current_rainfall + total_rainfall) / (count as f32 + 1.0);
-
-            for x in chunk_x..(chunk_x + chunk_size).min(size) {
-                for z in chunk_z..(chunk_z + chunk_size).min(size) {
-                    blended_map[x as usize][z as usize].temperature = blended_temp;
-                    blended_map[x as usize][z as usize].rainfall = blended_rainfall;
-                }
-            }
-        }
-    }
-
-    world_map.tiles = blended_map;
-}
-
 pub fn climate_stack(world_map: &mut WorldMap, seed: u32) {
     println!("Generating climate...");
     generate_climate_layer(world_map, seed);
-
-    println!("Blending climate...");
-    blend_climate(world_map, 512);
-    blend_climate(world_map, 256);
 }
